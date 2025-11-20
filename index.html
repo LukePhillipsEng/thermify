@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Processing App</title>
+</head>
+<body>
+    <h1>Upload Your Files</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <label>Reference File (CSV):</label>
+        <input type="file" name="reference" required><br><br>
+
+        <label>Base File (CSV):</label>
+        <input type="file" name="base" required><br><br>
+
+        <label>Read/Measurement File (CSV):</label>
+        <input type="file" name="read" required><br><br>
+
+        <button type="submit">Process</button>
+    </form>
+
+    {% if graph %}
+        <h2>Results</h2>
+        <p><strong>Reference Average (REF):</strong> {{ ref_value }}</p>
+
+        <h3>Main Graph</h3>
+        <img src="{{ url_for('uploaded_file', filename=graph) }}" alt="Graph" style="max-width:600px;"><br><br>
+
+        <h3>FFT Graph</h3>
+        <img src="{{ url_for('uploaded_file', filename=fft_graph) }}" alt="FFT Graph" style="max-width:600px;"><br><br>
+
+        <h3>Statistics</h3>
+        <ul>
+            {% for key, value in stats.items() %}
+                <li><strong>{{ key }}:</strong> {{ value }}</li>
+            {% endfor %}
+        </ul>
+
+        <br>
+        <a href="{{ url_for('uploaded_file', filename=csv_file) }}">Download Processed CSV (with Stats + FFT)</a>
+    {% endif %}
+</body>
+</html>
