@@ -396,19 +396,33 @@ class InstrumentApp:
         ref_c  = self.reference_data[:n]
         time_c = time_axis[:n]
 
-        # 2. Math Logic from app2.py
-        # Step 1: Average of REFERENCE
-        REF_AVG = np.mean(ref_c)
+        # 2. Math Logic from app2.py - CORRECTED
+        
+        # Calculate Base offset from current measurement to correct the Reference
+        base_dc_avg = np.mean(base_c)
+        
+        # Step 1: Average of REFERENCE file
+        ref_raw_avg = np.mean(ref_c)
+        
+        # CRITICAL FIX: Subtract the Base (Offset) from Reference 
+        # to get the "Pure Reference Signal"
+        REF_PURE = ref_raw_avg - base_dc_avg
+        
+        # Guard against zero in denominator
+        if abs(REF_PURE) < 1e-9: REF_PURE = 1e-9
 
-        # Step 2: RB = READ - BASE
+        # Step 2: RB = READ - BASE (Pure Signal)
         RB = read_c - base_c
 
         # Step 3: Final calc
-        # Avoid division by zero
-        denom = (0.0045 * REF_AVG)
-        if denom == 0: denom = 1e-9
+        # Formula: (Signal_Change) / (0.0045 * Ref_Signal)
+        # Signal_Change = RB (Current Pure) - REF_PURE (Reference Pure)
+        numerator = RB - REF_PURE
         
-        final_values = (RB - REF_AVG) / denom
+        denom = (0.0045 * REF_PURE)
+        if abs(denom) < 1e-9: denom = 1e-9
+        
+        final_values = numerator / denom
 
         # Step 4: Rolling Average (Window 256)
         # Note: np.convolve 'valid' reduces the size of the array
@@ -488,7 +502,7 @@ class InstrumentApp:
         
         # Graph 1: Time Domain
         ax1.plot(x, y, 'b-')
-        ax1.set_title("Processed Signal ((Read - Base - RefAvg) / ...)")
+        ax1.set_title("Processed Signal ((RB - RefPure) / (0.0045 * RefPure))")
         ax1.set_xlabel("Time (s)")
         ax1.set_ylabel("Amplitude")
         ax1.grid(True)
